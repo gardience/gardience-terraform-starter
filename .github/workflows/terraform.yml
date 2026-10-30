@@ -1,0 +1,34 @@
+name: terraform
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate
+
+  # Plan on pull requests and apply on main, on a runner inside your network.
+  # Skipped until you set the GARDIENCE_URL repository variable and the GARDIENCE_API_KEY secret.
+  # Add a remote backend (S3, azurerm, gcs, or HTTP) before using this, so state is not lost between runs.
+  deploy:
+    needs: check
+    if: vars.GARDIENCE_URL != ''
+    runs-on: [self-hosted, linux]
+    env:
+      GARDIENCE_URL: ${{ vars.GARDIENCE_URL }}
+      GARDIENCE_API_KEY: ${{ secrets.GARDIENCE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init -input=false
+      - run: terraform plan -input=false -out=tfplan
+      - if: github.event_name == 'push'
+        run: terraform apply -input=false tfplan
