@@ -1,6 +1,6 @@
 # A form people fill in to restart one service on a node group.
 resource "gardience_runbook" "restart" {
-  id          = "restart-service"
+  id          = "restart-a-service"   # not "restart-service": that id is a built-in runbook
   name        = "Restart a service"
   description = "Restarts one service on every machine in a node group"
   fun         = "service.restart"
